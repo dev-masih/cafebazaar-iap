@@ -2,7 +2,7 @@
 
 # افزونه پرداخت درون برنامه‌ای کافه‌بازار برای موتور بازی‌سازی دفولد
 
-<img src="main/hero.jpg" alt="cafebazaar-iap banner" style="max-width:100%;" />
+<img src="main/raw/hero.jpg" alt="cafebazaar-iap banner" style="max-width:100%;" />
 
 این کتابخانه یک [افزونه محلی](https://www.defold.com/manuals/extensions/) برای موتور بازی سازی دفولد می‌باشد که به شما قابلیت استفاده از مکانیزم پرداخت درون برنامه‌ای [کافه‌بازار](https://cafebazaar.ir/) را می‌دهد.  
 این افزونه نسخه سبک شده و تغییر یافته [افزونه رسمی پرداخت درون‌برنامه‌ای دفولد](https://github.com/defold/extension-iap) می‌باشد که با مکانیزم پرداخت درون‌برنامه‌ای کافه‌بازار سازگار شده است.  

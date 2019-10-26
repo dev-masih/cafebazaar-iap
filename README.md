@@ -1,6 +1,6 @@
 # Cafebazaar In-app purchase extension for Defold Game engine
 
-<img src="main/hero.jpg" alt="cafebazaar-iap banner" style="max-width:100%;" />
+<img src="main/raw/hero.jpg" alt="cafebazaar-iap banner" style="max-width:100%;" />
 
 [مشاهده این راهنما به زبان فارسی](https://github.com/dev-masih/cafebazaar-iap/blob/master/README-fa.md)
 
