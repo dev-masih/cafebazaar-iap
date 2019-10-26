@@ -1,0 +1,62 @@
+-- This is a simple example application using fake items
+
+local dirtylarry = require "dirtylarry/dirtylarry"
+
+-- fake item ids
+local items = {
+	"consumable",
+	"nonconsumable"
+}
+
+local product_items = {}
+
+local function list_callback(self, products, error)
+	if error == nil then
+		for k,p in pairs(products) do
+			product_items[p.ident] = p
+			local name = p.ident.."/larrylabel"
+			gui.set_color(gui.get_node(name), vmath.vector4(1,1,1,1))
+		end
+	else
+		print(error.error)
+	end
+end
+
+local function buy_listener(self, transaction, error)
+	pprint(transaction, error)
+	if not error and transaction.ident == "nonconsumable" then
+		local name = "reset/larrylabel"
+		gui.set_color(gui.get_node(name), vmath.vector4(1,1,1,1))
+		product_items["reset"] = transaction
+	elseif not error then
+		iapc.finish(transaction)
+	end
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	iapc.list(items, list_callback)
+	iapc.set_listener(buy_listener)
+end
+
+function on_input(self, action_id, action)
+	if product_items["consumable"] then
+		dirtylarry:button("consumable", action_id, action, function()
+			iapc.buy("consumable")
+		end)
+	end	
+
+	if product_items["nonconsumable"] then
+		dirtylarry:button("nonconsumable", action_id, action, function()
+			iapc.buy("nonconsumable")
+		end)
+	end	
+
+	if product_items["reset"] then
+		dirtylarry:button("reset", action_id, action, function()
+			iapc.finish(product_items["reset"])
+			product_items["reset"] =  nil
+			gui.set_color(gui.get_node("reset/larrylabel"), vmath.vector4(1,0,0,1))
+		end)
+	end	
+end
