@@ -1,0 +1,235 @@
+- name: iapc
+  type: table 
+  desc: Functions and constants for doing Cafebazaar in-app purchases.
+  members:
+
+#*****************************************************************************************************
+
+  - name: buy
+    type: function
+    desc: Sets the listener function for In-app purchase events.
+    parameters:
+      - name: id
+        type: string
+        desc: product to buy
+
+      - name: options
+        type: table
+        desc: optional parameters as properties. The following parameters can be set
+        members:
+        - name: request_id
+          type: string
+
+    examples:
+      - desc: |-
+            ```lua
+              local function iapc_listener(self, transaction, error)
+                if error == nil then
+                  -- purchase is successful.
+                  print(transaction.date)
+                  -- required if auto finish transactions is disabled in project settings
+                  if (transaction.state == iapc.TRANS_STATE_PURCHASED) then
+                    -- do server-side verification of purchase here..
+                    iapc.finish(transaction)
+                  end
+                else
+                  print(error.error, error.reason)
+                end
+              end
+
+              function init(self)
+                  iapc.set_listener(iapc_listener)
+                  iapc.buy("my_iap_id")
+              end
+            ```
+
+#*****************************************************************************************************
+
+  - name: finish
+    type: function
+    desc: Explicitly finish a product transaction.
+          Calling iapc.finish is required on a successful transaction
+          if `auto_finish_transactions` is disabled in project settings. Calling this function
+          with `auto_finish_transactions` set will be ignored and a warning is printed.
+          The `transaction.state` field must equal `iapc.TRANS_STATE_PURCHASED`.
+    parameters:
+      - name: transaction
+        type: table
+        desc: transaction table parameter as supplied in listener callback
+
+#*****************************************************************************************************
+
+  - name: list
+    type: function
+    desc: Get a list of all avaliable iapc products.
+    parameters:
+    - name: ids
+      type: table
+      desc: table (array) of identifiers to get products from
+
+    - name: callback
+      type: function
+      desc: result callback taking the following parameters
+      parameters:
+      - name: self
+        type: object
+        desc: The current object.
+
+      - name: products
+        type: table
+        desc: a table describing the available iapc products.
+        members:
+        - name: ident
+          type: string
+          desc: The product identifier.
+
+        - name: title
+          type: string
+          desc: The product title.
+
+        - name: description
+          type: string
+          desc: The product description.
+
+        - name: price
+          type: number
+          desc: The price of the product.
+
+        - name: price_string
+          type: string
+          desc: The price of the product, as a formatted string (amount and currency symbol).
+
+        - name: currency_code
+          type: string
+          desc: The currency code, this reflects the merchant's locale, instead of the user's.
+
+      - name: error
+        type: table
+        desc: a table containing error information. `nil` if there is no error. - `error` (the error message)
+
+    examples:
+      - desc: |-
+            ```lua
+              local function iapc_callback(self, products, error)
+                if error == nil then
+                  for k,p in pairs(products) do
+                    -- present the product
+                    print(p.title)
+                    print(p.description)
+                  end
+                else
+                  print(error.error)
+                end
+              end
+
+              function init(self)
+                  iapc.list({"my_iap_id"}, iapc_callback)
+              end
+            ```
+
+#*****************************************************************************************************
+
+  - name: restore
+    type: function
+    desc: Restore previously purchased products.
+    returns:
+      - name: success
+        type: boolean
+        desc: value is `true` if current store supports handling
+              restored transactions, otherwise `false`.
+
+#*****************************************************************************************************
+
+  - name: set_listener
+    type: function
+    desc: Set the callback function to receive purchase transaction events.
+    parameters:
+    - name: listener
+      type: function
+      desc: listener callback function. Pass an empty function if you no longer wish to receive callbacks.
+      parameters:
+      - name: self
+        type: object
+        desc: The current object.
+
+      - name: transaction
+        type: table
+        desc: a table describing the transaction.
+        members:
+        - name: ident
+          type: string
+          desc: The product identifier.
+
+        - name: state
+          type: string
+          desc: The transaction state. One of the following
+
+               - `iapc.TRANS_STATE_FAILED`
+
+               - `iapc.TRANS_STATE_PURCHASED`
+
+               - `iapc.TRANS_STATE_PURCHASING`
+
+               - `iapc.TRANS_STATE_RESTORED`
+
+               - `iapc.TRANS_STATE_UNVERIFIED`
+
+        - name: date
+          type: string
+          desc: The date and time for the transaction.
+
+        - name: trans_ident
+          type: string
+          desc: The transaction identifier. This field is only set when `state` is 
+                `TRANS_STATE_RESTORED`, `TRANS_STATE_UNVERIFIED` or `TRANS_STATE_PURCHASED`.
+
+        - name: receipt
+          type: string
+          desc: The transaction receipt. This field is only set when `state` is `TRANS_STATE_PURCHASED` or `TRANS_STATE_UNVERIFIED`.
+
+        - name: signature
+          type: string
+          desc: A string containing the signature of the purchase data that was signed with the private key of the developer.
+
+      - name: error
+        type: table
+        desc: a table containing error information. `nil` if there is no error. `error` - the error message.
+              `reason` - the reason for the error, value can be one of the following constants
+
+               - `iapc.REASON_UNSPECIFIED`
+
+               - `iapc.REASON_USER_CANCELED`
+
+#*****************************************************************************************************
+    
+  - name: REASON_UNSPECIFIED
+    type: number
+    desc: unspecified error reason
+    
+  - name: REASON_USER_CANCELED
+    type: number
+    desc: user canceled reason
+    
+  - name: TRANS_STATE_FAILED
+    type: number
+    desc: transaction failed state
+    
+  - name: TRANS_STATE_PURCHASED
+    type: number
+    desc: transaction purchased state
+    
+  - name: TRANS_STATE_PURCHASING
+    type: number
+    desc: transaction purchasing state
+          This is an intermediate mode followed by TRANS_STATE_PURCHASED. Store provider support dependent.
+    
+  - name: TRANS_STATE_RESTORED
+    type: number
+    desc: transaction restored state
+          This is only available on store providers supporting restoring purchases.
+    
+  - name: TRANS_STATE_UNVERIFIED
+    type: number
+    desc: transaction unverified state, requires verification of purchase
+    
+    
