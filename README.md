@@ -12,7 +12,9 @@ You can use Cafebazzar In-app purchase in your project by adding this project as
 
 	https://github.com/dev-masih/cafebazaar-iap/archive/master.zip
   
-Once added, you can use Cafebazzar In-app purchase functions using module `iapc`.
+Once added, you can use Cafebazzar In-app purchase functions using module `iapc`.  
+
+[Official Defold game asset page for Cafebazaar In-app purchase extension](https://defold.com/assets/cafebazaar/)
 
 ## Documentations  
 To learn how to use IAP please visit the [documentation page](https://defold.github.io/extension-iap/) for official defold IAP extension.  
