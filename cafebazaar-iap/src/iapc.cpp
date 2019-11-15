@@ -9,22 +9,6 @@
 
 #define LIB_NAME "iapc"
 
-struct IAPC;
-
-#define CMD_PRODUCT_RESULT (0)
-#define CMD_PURCHASE_RESULT (1)
-
-struct DM_ALIGNED(16) IAPCCommand
-{
-    IAPCCommand()
-    {
-        memset(this, 0, sizeof(IAPCCommand));
-    }
-    uint32_t m_Command;
-    int32_t  m_ResponseCode;
-    void*    m_Data1;
-};
-
 static JNIEnv* Attach()
 {
     JNIEnv* env;
@@ -54,7 +38,7 @@ struct IAPC
     int                  m_Self;
     bool                 m_autoFinishTransactions;
     lua_State*           m_L;
-    IAPCListener          m_Listener;
+    IAPCListener         m_Listener;
 
     jobject              m_IAPC;
     jobject              m_IAPCJNI;
@@ -65,27 +49,14 @@ struct IAPC
     jmethodID            m_ProcessPendingConsumables;
     jmethodID            m_FinishTransaction;
 
-    dmArray<IAPCCommand>  m_CommandsQueue;
-    dmMutex::HMutex      m_Mutex;
+    IAPCCommandQueue m_CommandQueue;
 };
 
 static IAPC g_IAPC;
 
-static void QueueCommand(IAPCCommand* cmd)
-{
-    DM_MUTEX_SCOPED_LOCK(g_IAPC.m_Mutex);
-    
-    if(g_IAPC.m_CommandsQueue.Full())
-    {
-        g_IAPC.m_CommandsQueue.OffsetCapacity(2);
-    }
-    g_IAPC.m_CommandsQueue.Push(*cmd);
-}
-
-static void VerifyCallback(lua_State* L)
+static void ResetCallback(lua_State* L)
 {
     if (g_IAPC.m_Callback != LUA_NOREF) {
-        dmLogError("Unexpected callback set");
         dmScript::Unref(L, LUA_REGISTRYINDEX, g_IAPC.m_Callback);
         dmScript::Unref(L, LUA_REGISTRYINDEX, g_IAPC.m_Self);
         g_IAPC.m_Callback = LUA_NOREF;
@@ -97,7 +68,7 @@ static void VerifyCallback(lua_State* L)
 static int IAPC_List(lua_State* L)
 {
     int top = lua_gettop(L);
-    VerifyCallback(L);
+    ResetCallback(L);
 
     char* buf = IAPC_List_CreateBuffer(L);
     if( buf == 0 )
@@ -257,14 +228,14 @@ JNIEXPORT void JNICALL Java_com_defold_iapc_IapJNI_onProductsResult__ILjava_lang
     }
 
     IAPCCommand cmd;
-    cmd.m_Command = CMD_PRODUCT_RESULT;
+    cmd.m_Command = IAPC_PRODUCT_RESULT;
     cmd.m_ResponseCode = responseCode;
     if (pl)
     {
-        cmd.m_Data1 = strdup(pl);
+        cmd.m_Data = strdup(pl);
         env->ReleaseStringUTFChars(productList, pl);
     }
-    QueueCommand(&cmd);
+    IAPC_Queue_Push(&g_IAPC.m_CommandQueue, &cmd);
 }
 
 JNIEXPORT void JNICALL Java_com_defold_iapc_IapJNI_onPurchaseResult__ILjava_lang_String_2(JNIEnv* env, jobject, jint responseCode, jstring purchaseData)
@@ -276,14 +247,14 @@ JNIEXPORT void JNICALL Java_com_defold_iapc_IapJNI_onPurchaseResult__ILjava_lang
     }
 
     IAPCCommand cmd;
-    cmd.m_Command = CMD_PURCHASE_RESULT;
+    cmd.m_Command = IAPC_PURCHASE_RESULT;
     cmd.m_ResponseCode = responseCode;
     if (pd)
     {
-        cmd.m_Data1 = strdup(pd);
+        cmd.m_Data = strdup(pd);
         env->ReleaseStringUTFChars(purchaseData, pd);
     }
-    QueueCommand(&cmd);
+    IAPC_Queue_Push(&g_IAPC.m_CommandQueue, &cmd);
 }
 
 #ifdef __cplusplus
@@ -317,7 +288,7 @@ static void HandleProductResult(const IAPCCommand* cmd)
 
     if (cmd->m_ResponseCode == BILLING_RESPONSE_RESULT_OK) {
         dmJson::Document doc;
-        dmJson::Result r = dmJson::Parse((const char*) cmd->m_Data1, &doc);
+        dmJson::Result r = dmJson::Parse((const char*) cmd->m_Data, &doc);
         if (r == dmJson::RESULT_OK && doc.m_NodeCount > 0) {
             char err_str[128];
             if (dmScript::JsonToLua(L, &doc, 0, err_str, sizeof(err_str)) < 0) {
@@ -380,9 +351,9 @@ static void HandlePurchaseResult(const IAPCCommand* cmd)
     }
 
     if (cmd->m_ResponseCode == BILLING_RESPONSE_RESULT_OK) {
-        if (cmd->m_Data1 != 0) {
+        if (cmd->m_Data != 0) {
             dmJson::Document doc;
-            dmJson::Result r = dmJson::Parse((const char*) cmd->m_Data1, &doc);
+            dmJson::Result r = dmJson::Parse((const char*) cmd->m_Data, &doc);
             if (r == dmJson::RESULT_OK && doc.m_NodeCount > 0) {
                 char err_str[128];
                 if (dmScript::JsonToLua(L, &doc, 0, err_str, sizeof(err_str)) < 0) {
@@ -426,8 +397,7 @@ static dmExtension::Result InitializeIAPC(dmExtension::Params* params)
     // TODO: Life-cycle managaemnt is *budget*. No notion of "static initalization"
     // Extend extension functionality with per system initalization?
     if (g_IAPC.m_InitCount == 0) {
-        g_IAPC.m_CommandsQueue.SetCapacity(2);
-        g_IAPC.m_Mutex = dmMutex::New();
+        IAPC_Queue_Create(&g_IAPC.m_CommandQueue);
 
         g_IAPC.m_autoFinishTransactions = dmConfigFile::GetInt(params->m_ConfigFile, "iap.auto_finish_transactions", 1) == 1;
 
@@ -478,42 +448,35 @@ static dmExtension::Result InitializeIAPC(dmExtension::Params* params)
     return dmExtension::RESULT_OK;
 }
 
-static dmExtension::Result UpdateIAPC(dmExtension::Params* params)
+static void IAPC_OnCommand(IAPCCommand* cmd, void*)
 {
-    if (g_IAPC.m_CommandsQueue.Empty())
+    switch (cmd->m_Command)
     {
-        return dmExtension::RESULT_OK;
-    }
-
-    DM_MUTEX_SCOPED_LOCK(g_IAPC.m_Mutex);
-
-    for(uint32_t i = 0; i != g_IAPC.m_CommandsQueue.Size(); ++i)
-    {
-        IAPCCommand& cmd = g_IAPC.m_CommandsQueue[i];
-        switch (cmd.m_Command)
-        {
-        case CMD_PRODUCT_RESULT:
-            HandleProductResult(&cmd);
+    case IAPC_PRODUCT_RESULT:
+        HandleProductResult(cmd);
             break;
-        case CMD_PURCHASE_RESULT:
-            HandlePurchaseResult(&cmd);
+    case IAPC_PURCHASE_RESULT:
+        HandlePurchaseResult(cmd);
             break;
 
         default:
             assert(false);
         }
 
-        if (cmd.m_Data1) {
-            free(cmd.m_Data1);
+    if (cmd->m_Data) {
+        free(cmd->m_Data);
         }
-    }
-    g_IAPC.m_CommandsQueue.SetSize(0);
+}
+
+static dmExtension::Result UpdateIAPC(dmExtension::Params* params)
+{
+    IAPC_Queue_Flush(&g_IAPC.m_CommandQueue, IAPC_OnCommand, 0);
     return dmExtension::RESULT_OK;
 }
 
 static dmExtension::Result FinalizeIAPC(dmExtension::Params* params)
 {
-    dmMutex::Delete(g_IAPC.m_Mutex);
+    IAPC_Queue_Destroy(&g_IAPC.m_CommandQueue);
     --g_IAPC.m_InitCount;
 
     if (params->m_L == g_IAPC.m_Listener.m_L && g_IAPC.m_Listener.m_Callback != LUA_NOREF) {
