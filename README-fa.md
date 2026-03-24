@@ -27,15 +27,14 @@
 در صورت برخورد به مشکل یا طرح سوال و پیشنهاد در مورد این افزونه داشتید لطفا [با ساخت issue](https://github.com/dev-masih/cafebazaar-iap/issues) اطلاع دهید.  
   
 ## حمایت  
-در صورتی که از این افزونه رضایت داشتید و می‌خواهید از من حمایت کنید می‌توانید حمایت‌های مالی خودتون رو از طریق درگاه [زرین‌پال](https://zarinp.al/@dev-masih) واریز نمایید. حمایت مالی به هیچ عنوان اجباری نیست. از حامیان محترم بسیار سپاسگزارم. 🙏  
-همچنین در صورت دلخواه می‌توانید با استفاده از لایت کوین، بیت کوین و اتریوم نیز از من حمایت کنید.
+در صورتی که از این افزونه رضایت داشتید و می‌خواهید از من حمایت کنید می‌توانید حمایت‌های مالی خودتون رو از طریق درگاه [زرین‌پال](https://zarinp.al/@dev-masih) واریز نمایید. حمایت مالی به هیچ عنوان اجباری نیست. از حامیان محترم بسیار سپاسگزارم.
+همچنین در صورت دلخواه می‌توانید با استفاده از کریپتو نیز از من حمایت کنید.
 
+<p align="left">
+  <img src="https://raw.githubusercontent.com/dev-masih/my-media-bin/refs/heads/master/donation-links/donation-link-bitcoin.svg" width="180" style="margin-right: 20px;" alt="Bitcoin Donation">
+  <img src="https://raw.githubusercontent.com/dev-masih/my-media-bin/refs/heads/master/donation-links/donation-link-ethereum.svg" width="180" alt="Ethereum Donation">
+</p>
 
-| LTC  | BTC | ETH |
-| ------------- | ------------- | ------------- |
-| ![LTC](https://user-images.githubusercontent.com/8469800/160749469-811a4395-4b71-4e03-890d-6f260c4ff36a.jpeg) | ![BTC](https://user-images.githubusercontent.com/8469800/160749502-c5b380d3-455f-483f-9f7f-d6948949259d.jpeg) | ![ETH](https://user-images.githubusercontent.com/8469800/160749569-ad99965c-ddd5-43da-8728-4b79c37fc3f5.jpeg) |
-| ltc1qm6r32vjahm8wwd688enxnutks0jffc3kqg7ps5  | bc1qcuuc5r4jw38vf2eztsxag68papuwzd25chrepx  | 0x02c22832bc115933Ac11388D5A91e0990eE84667  |
-  
 ## لایسنس  
 این افزونه تحت لایسنس MIT منتشر شده. برای مشاهده جزئیات بیشتر به [فایل لایسنس](https://github.com/dev-masih/cafebazaar-iap/blob/master/LICENSE) مراجعه کنید.  
 

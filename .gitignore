@@ -9,3 +9,6 @@ Thumbs.db
 .cproject
 builtins
 _site
+.vscode/*
+debugger/*
+/.editor_settings

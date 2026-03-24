@@ -16,10 +16,11 @@ version_code = 1
 [project]
 title = Cafebazaar-IAP
 version = 1.0
-dependencies = https://github.com/andsve/dirtylarry/archive/master.zip
+dependencies#0 = https://github.com/andsve/dirtylarry/archive/master.zip
 
 [library]
 include_dirs = cafebazaar-iap
 
 [iap]
 auto_finish_transactions = 0
+
